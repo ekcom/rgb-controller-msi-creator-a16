@@ -15,7 +15,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  VERBOSE_FLAG: ${{ inputs.verbose == true && '--verbose' || '' }}
+  VERBOSE_FLAG: ${{ inputs.verbose == true && '--verbose ' || '' }}
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
         shared-key: "rust-ci-cache"
 
     - name: Build
-      run: cargo build ${{ env.VERBOSE_FLAG }} --profile ${{ matrix.BUILD_TARGET }}
+      run: cargo build ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
@@ -55,7 +55,7 @@ jobs:
         shared-key: "rust-ci-cache"
 
     - name: Run tests
-      run: cargo test ${{ env.VERBOSE_FLAG }} --profile ${{ matrix.BUILD_TARGET }}
+      run: cargo test ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
 
   lint:
     needs: build
@@ -72,4 +72,4 @@ jobs:
       run: cargo fmt --all -- --check
 
     - name: Run Clippy
-      run: cargo clippy ${{ env.VERBOSE_FLAG }} -- -D warnings
+      run: cargo clippy ${{ env.VERBOSE_FLAG }}-- -D warnings
