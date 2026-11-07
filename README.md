@@ -6,11 +6,11 @@ Contains a library and a CLI driver.
 
 ## Requirements
 
-### Supported devices
+### Supported Devices
 
 - MSI Creator A16 AI+
-    - Other `MS_1565` devices are not guaranteed to work
-    - Tested on BIOS version `E15FKAMS.321` (09/17/2026)
+    - Verified on BIOS release `E15FKAMS.321` (09/17/2026)
+    - Other MSI `MS_1565` keyboards may share this controller but are not guaranteed to work
 
 ### Dependencies
 
