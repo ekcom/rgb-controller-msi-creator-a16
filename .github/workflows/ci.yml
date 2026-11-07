@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Run cargo commands with verbose output"
+        type: boolean
+        required: false
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+  VERBOSE_FLAG: ${{ inputs.verbose == true && '--verbose ' || '' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy
+      run: cargo clippy ${{ env.VERBOSE_FLAG }}-- -D warnings
+
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        BUILD_TARGET: [dev]
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Run tests
+      run: cargo test ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
+
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        BUILD_TARGET: [dev]
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Load cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Build
+      run: cargo build ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
+
+    - name: Determine target directory for build
+      id: target-dir
+      run: |
+        if [ "${{ matrix.BUILD_TARGET }}" = "dev" ]; then
+          echo "dir=debug" >> $GITHUB_OUTPUT
+        else
+          echo "dir=${{ matrix.BUILD_TARGET }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: rgb-controller-msi-creator-a16-${{ matrix.BUILD_TARGET }}
+        path: target/${{ steps.target-dir.outputs.dir }}/rgb-controller-msi-creator-a16
