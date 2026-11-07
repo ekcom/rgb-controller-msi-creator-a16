@@ -18,6 +18,38 @@ env:
   VERBOSE_FLAG: ${{ inputs.verbose == true && '--verbose ' || '' }}
 
 jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "rust-ci-cache"
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy
+      run: cargo clippy ${{ env.VERBOSE_FLAG }}-- -D warnings
+
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        BUILD_TARGET: [dev]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "rust-ci-cache"
+
+    - name: Run tests
+      run: cargo test ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
+
   build:
     runs-on: ubuntu-24.04
     strategy:
@@ -39,35 +71,3 @@ jobs:
       with:
         name: rgb-controller-msi-creator-a16
         path: target/${{ matrix.BUILD_TARGET }}/rgb-controller-msi-creator-a16
-
-  test:
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        BUILD_TARGET: [dev]
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: "rust-ci-cache"
-
-    - name: Run tests
-      run: cargo test ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
-
-  lint:
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: "rust-ci-cache"
-
-    - name: Check formatting
-      run: cargo fmt --all -- --check
-
-    - name: Run Clippy
-      run: cargo clippy ${{ env.VERBOSE_FLAG }}-- -D warnings
