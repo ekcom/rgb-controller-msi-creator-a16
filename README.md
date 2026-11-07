@@ -1,5 +1,9 @@
 # RGB Keyboard Controller for MSI Creator A16 AI+
 
+A userspace USB HID controller for the **MSI Creator A16 AI+** laptop's per-key RGB keyboard controller.
+
+Contains a library and a CLI driver.
+
 ## Requirements
 
 ### Supported devices
