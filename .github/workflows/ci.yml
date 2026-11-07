@@ -66,8 +66,17 @@ jobs:
     - name: Build
       run: cargo build ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
 
+    - name: Determine target directory for build
+      id: target-dir
+      run: |
+        if [ "${{ matrix.BUILD_TARGET }}" = "dev" ]; then
+          echo "dir=debug" >> $GITHUB_OUTPUT
+        else
+          echo "dir=${{ matrix.BUILD_TARGET }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: rgb-controller-msi-creator-a16
-        path: target/${{ matrix.BUILD_TARGET }}/rgb-controller-msi-creator-a16
+        name: rgb-controller-msi-creator-a16-${{ matrix.BUILD_TARGET }}
+        path: target/${{ steps.target-dir.outputs.dir }}/rgb-controller-msi-creator-a16
