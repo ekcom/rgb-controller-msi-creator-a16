@@ -1,31 +1,33 @@
 # RGB Keyboard Controller for MSI Creator A16 AI+
 
+A userspace USB HID controller for the **MSI Creator A16 AI+** laptop's per-key RGB keyboard controller.
+
+Contains a library and a CLI driver.
+
 ## Requirements
 
-### Supported devices
+### Supported Devices
 
 - MSI Creator A16 AI+
-    - Other `MS_1565` devices are not guaranteed to work
-    - Tested on BIOS version `E15FKAMS.321` (09/17/2026)
+    - Verified on BIOS release `E15FKAMS.321` (09/17/2026)
+    - Other MSI `MS_1565` keyboards may share this controller but are not guaranteed to work
 
 ### Dependencies
 
 - cargo
 
-## Installation
+### Configure udev Rule
 
-### 1. Configure udev rule
-
-In order to access the device without root, you must configure a udev rule to grant access.
+To interact with the keyboard controller without root privileges, you must install a udev rule.
 
 Create `/etc/udev/rules.d/60-rgb-controller-msi-creator-a16.rules`:
 
 ```
-SUBSYSTEMS=="hidraw", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="1565", TAG+="uaccess"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="1565", TAG+="uaccess"
 ```
 
-### 2. Build & run program
+To apply without rebooting:
 
-```
-cargo run
+```bash
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
