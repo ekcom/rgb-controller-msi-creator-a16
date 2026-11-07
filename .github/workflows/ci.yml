@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Run cargo commands with verbose output"
+        type: boolean
+        required: false
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+  VERBOSE_FLAG: ${{ inputs.verbose == true && '--verbose' || '' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        BUILD_TARGET: [dev]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Load cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "rust-ci-cache"
+
+    - name: Build
+      run: cargo build ${{ env.VERBOSE_FLAG }} --profile ${{ matrix.BUILD_TARGET }}
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rgb-controller-msi-creator-a16
+        path: target/${{ matrix.BUILD_TARGET }}/rgb-controller-msi-creator-a16
+
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        BUILD_TARGET: [dev]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "rust-ci-cache"
+
+    - name: Run tests
+      run: cargo test ${{ env.VERBOSE_FLAG }} --profile ${{ matrix.BUILD_TARGET }}
+
+  lint:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: "rust-ci-cache"
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy
+      run: cargo clippy ${{ env.VERBOSE_FLAG }} -- -D warnings
