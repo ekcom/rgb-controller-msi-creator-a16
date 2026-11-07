@@ -41,7 +41,6 @@ jobs:
         path: target/${{ matrix.BUILD_TARGET }}/rgb-controller-msi-creator-a16
 
   test:
-    needs: build
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -58,7 +57,6 @@ jobs:
       run: cargo test ${{ env.VERBOSE_FLAG }}--profile ${{ matrix.BUILD_TARGET }}
 
   lint:
-    needs: build
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
