@@ -12,20 +12,18 @@
 
 - cargo
 
-## Installation
+### Configure udev Rule
 
-### 1. Configure udev rule
-
-In order to access the device without root, you must configure a udev rule to grant access.
+To interact with the keyboard controller without root privileges, you must install a udev rule.
 
 Create `/etc/udev/rules.d/60-rgb-controller-msi-creator-a16.rules`:
 
 ```
-SUBSYSTEMS=="hidraw", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="1565", TAG+="uaccess"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="1565", TAG+="uaccess"
 ```
 
-### 2. Build & run program
+To apply without rebooting:
 
-```
-cargo run
+```bash
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
