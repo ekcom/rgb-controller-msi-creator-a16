@@ -5,14 +5,18 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use rgb_controller_msi_creator_a16::driver::{
-    CyclePalette, MsiKeyboardDriver, PerKeyEffect, ProfileTargetMode, Rgb, Speed, TransientPalette, WaveDirection,
+    CyclePalette, MsiKeyboardDriver, PerKeyEffect, ProfileTargetMode, Rgb, Speed, TransientPalette,
+    WaveDirection,
 };
 use rgb_controller_msi_creator_a16::protocol::*;
-use rgb_controller_msi_creator_a16::transport::{HidControlTransport, RecordedOperation, TransportError};
+use rgb_controller_msi_creator_a16::transport::{
+    HidControlTransport, RecordedOperation, TransportError,
+};
 use serde::Deserialize;
 
 const CAPTURE_CSV_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/support/capture.csv");
-const CAPTURE_PCAPNG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/support/capture.pcapng");
+const CAPTURE_PCAPNG_PATH: &str =
+    concat!(env!("CARGO_MANIFEST_DIR"), "/tests/support/capture.pcapng");
 
 static SCENARIOS: OnceLock<Vec<CapturedScenario>> = OnceLock::new();
 
@@ -160,10 +164,19 @@ impl PcapTraceLoader {
             let req = &pair[0];
             let resp = &pair[1];
             assert_eq!(req.control_stage, Some(0.0), "Expected Setup stage (0.0)");
-            assert_eq!(resp.control_stage, Some(3.0), "Expected Complete stage (3.0)");
+            assert_eq!(
+                resp.control_stage,
+                Some(3.0),
+                "Expected Complete stage (3.0)"
+            );
 
             // Start a new scenario whenever a frame comment is present
-            if let Some(comment_text) = req.comment.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
+            if let Some(comment_text) = req
+                .comment
+                .as_deref()
+                .map(str::trim)
+                .filter(|c| !c.is_empty())
+            {
                 if let Some(prev) = current_scenario.take() {
                     scenarios.push(prev);
                 }
@@ -200,7 +213,10 @@ impl PcapTraceLoader {
                         length: w_len,
                     }
                 }
-                other => panic!("Unexpected bRequest 0x{other:02x} at frame {}", req.frame_number),
+                other => panic!(
+                    "Unexpected bRequest 0x{other:02x} at frame {}",
+                    req.frame_number
+                ),
             };
 
             if let Some(scen) = current_scenario.as_mut() {
@@ -283,7 +299,11 @@ impl HidControlTransport for ProtocolValidatorTransport {
         Ok(())
     }
 
-    fn set_report(&mut self, w_value: u16, payload: &[u8; REPORT_LEN]) -> Result<(), TransportError> {
+    fn set_report(
+        &mut self,
+        w_value: u16,
+        payload: &[u8; REPORT_LEN],
+    ) -> Result<(), TransportError> {
         assert_eq!(
             self.bus_state,
             BusState::Idle,
@@ -310,13 +330,19 @@ impl HidControlTransport for ProtocolValidatorTransport {
         match (report_id, opcode) {
             (REPORT_ID_1, CMD_HANDSHAKE_91) => {
                 assert_eq!(payload[2], 0x01, "01 91 Byte 2 must be 0x01");
-                assert!(payload[3..].iter().all(|&b| b == 0), "01 91 Bytes 3..63 must be 0x00");
+                assert!(
+                    payload[3..].iter().all(|&b| b == 0),
+                    "01 91 Bytes 3..63 must be 0x00"
+                );
                 self.bus_state = BusState::AwaitingStandardGetReport {
                     preceding_opcode: (report_id, opcode),
                 };
             }
             (REPORT_ID_1, CMD_STATE_QUERY_A0) => {
-                assert!(payload[2..].iter().all(|&b| b == 0), "01 a0 Bytes 2..63 must be 0x00");
+                assert!(
+                    payload[2..].iter().all(|&b| b == 0),
+                    "01 a0 Bytes 2..63 must be 0x00"
+                );
                 self.bus_state = BusState::AwaitingStandardGetReport {
                     preceding_opcode: (report_id, opcode),
                 };
@@ -357,10 +383,9 @@ impl HidControlTransport for ProtocolValidatorTransport {
                 };
             }
             (REPORT_ID_2, SUBCMD_SET_EFFECT) => {
-                let mask = self
-                    .pending_key_mask
-                    .take()
-                    .expect("Protocol violation: 02 02 Set Effect issued without preceding 02 01 Key Mask");
+                let mask = self.pending_key_mask.take().expect(
+                    "Protocol violation: 02 02 Set Effect issued without preceding 02 01 Key Mask",
+                );
 
                 assert_eq!(payload[10], 0x00, "02 02 Byte 10 (reserved) must be 0x00");
                 assert!(
@@ -391,7 +416,10 @@ impl HidControlTransport for ProtocolValidatorTransport {
                     "Protocol violation: Music Init (02 05) must be preceded by 02 02 06 00... global clear"
                 );
                 assert_eq!(payload[20], 0xff, "02 05 Byte 20 terminator must be 0xff");
-                assert!(payload[21..].iter().all(|&b| b == 0), "02 05 Bytes 21..63 must be 0x00");
+                assert!(
+                    payload[21..].iter().all(|&b| b == 0),
+                    "02 05 Bytes 21..63 must be 0x00"
+                );
                 self.bus_state = BusState::AwaitingMusicGetReport {
                     preceding_opcode: (report_id, opcode),
                 };
@@ -402,7 +430,10 @@ impl HidControlTransport for ProtocolValidatorTransport {
                 };
             }
             (REPORT_ID_2, SUBCMD_FLASH_APPLY) => {
-                assert!(payload[2..].iter().all(|&b| b == 0), "02 a0 Bytes 2..63 must be 0x00");
+                assert!(
+                    payload[2..].iter().all(|&b| b == 0),
+                    "02 a0 Bytes 2..63 must be 0x00"
+                );
                 if !self.pending_first_flash_apply {
                     self.pending_first_flash_apply = true;
                     self.accumulated_sleep_since_flash_ms = 0;
@@ -419,7 +450,10 @@ impl HidControlTransport for ProtocolValidatorTransport {
                 };
             }
             (REPORT_ID_2, SUBCMD_DISCARD) => {
-                assert!(payload[2..].iter().all(|&b| b == 0), "02 b0 Bytes 2..63 must be 0x00");
+                assert!(
+                    payload[2..].iter().all(|&b| b == 0),
+                    "02 b0 Bytes 2..63 must be 0x00"
+                );
                 self.bus_state = BusState::AwaitingStandardGetReport {
                     preceding_opcode: (report_id, opcode),
                 };
@@ -509,7 +543,10 @@ fn normalize_captured_op(op: &RecordedOperation) -> RecordedOperation {
 }
 
 /// Strips `SetIdle` and `Sleep` operations to compare the sequence of `SET_REPORT` + `GET_REPORT` pairs.
-fn extract_bus_reports(ops: &[RecordedOperation], normalize_residuals: bool) -> Vec<RecordedOperation> {
+fn extract_bus_reports(
+    ops: &[RecordedOperation],
+    normalize_residuals: bool,
+) -> Vec<RecordedOperation> {
     ops.iter()
         .filter(|op| {
             matches!(
@@ -592,17 +629,26 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             97,
             false,
-            Box::new(|d| d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             117,
             false,
-            Box::new(|d| d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Slow).unwrap()),
+            Box::new(|d| {
+                d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Slow)
+                    .unwrap()
+            }),
         ),
         (
             127,
             false,
-            Box::new(|d| d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Fast).unwrap()),
+            Box::new(|d| {
+                d.set_breath(Rgb::WHITE, Rgb::WARM_ORANGE, Speed::Fast)
+                    .unwrap()
+            }),
         ),
         (
             147,
@@ -617,32 +663,49 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             167,
             false,
-            Box::new(|d| d.set_color_cycle(CyclePalette::Rainbow, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_color_cycle(CyclePalette::Rainbow, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             213,
             false,
-            Box::new(|d| d.set_color_cycle(CyclePalette::Rainbow, Speed::Slow).unwrap()),
+            Box::new(|d| {
+                d.set_color_cycle(CyclePalette::Rainbow, Speed::Slow)
+                    .unwrap()
+            }),
         ),
         (
             223,
             false,
-            Box::new(|d| d.set_color_cycle(CyclePalette::Rainbow, Speed::Fast).unwrap()),
+            Box::new(|d| {
+                d.set_color_cycle(CyclePalette::Rainbow, Speed::Fast)
+                    .unwrap()
+            }),
         ),
         (
             273,
             false,
             Box::new(|d| {
-                d.set_wave(CyclePalette::Rainbow, Speed::Medium, WaveDirection::LeftToRight)
-                    .unwrap()
+                d.set_wave(
+                    CyclePalette::Rainbow,
+                    Speed::Medium,
+                    WaveDirection::LeftToRight,
+                )
+                .unwrap()
             }),
         ),
         (
             283,
             false,
             Box::new(|d| {
-                d.set_wave(CyclePalette::Rainbow, Speed::Medium, WaveDirection::RightToLeft)
-                    .unwrap()
+                d.set_wave(
+                    CyclePalette::Rainbow,
+                    Speed::Medium,
+                    WaveDirection::RightToLeft,
+                )
+                .unwrap()
             }),
         ),
         (
@@ -665,7 +728,10 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             561,
             false,
-            Box::new(|d| d.set_starlight(TransientPalette::Rainbow, Speed::Slow).unwrap()),
+            Box::new(|d| {
+                d.set_starlight(TransientPalette::Rainbow, Speed::Slow)
+                    .unwrap()
+            }),
         ),
         (
             585,
@@ -678,7 +744,10 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             601,
             false,
-            Box::new(|d| d.set_firework(TransientPalette::Rainbow, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_firework(TransientPalette::Rainbow, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             625,
@@ -691,7 +760,10 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             633,
             false,
-            Box::new(|d| d.set_laser(TransientPalette::Rainbow, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_laser(TransientPalette::Rainbow, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             665,
@@ -704,12 +776,18 @@ fn build_driver_test_cases() -> Vec<(u32, bool, DriverAction)> {
         (
             689,
             false,
-            Box::new(|d| d.set_ripple(TransientPalette::Rainbow, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_ripple(TransientPalette::Rainbow, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             721,
             false,
-            Box::new(|d| d.set_comet(TransientPalette::Rainbow, Speed::Medium).unwrap()),
+            Box::new(|d| {
+                d.set_comet(TransientPalette::Rainbow, Speed::Medium)
+                    .unwrap()
+            }),
         ),
         (
             781,
@@ -1011,7 +1089,10 @@ fn test_scenario_coverage_and_discrepancy_audit() {
     }
 
     // 3. Tested frames and excluded frames must be mutually exclusive (no overlap)
-    let overlap: Vec<_> = tested_frames.intersection(&excluded_frames).copied().collect();
+    let overlap: Vec<_> = tested_frames
+        .intersection(&excluded_frames)
+        .copied()
+        .collect();
     assert!(
         overlap.is_empty(),
         "Frames appear in BOTH driver test cases and exclusion list: {overlap:?}"
@@ -1028,15 +1109,22 @@ fn test_scenario_coverage_and_discrepancy_audit() {
     // 5. Wire Discrepancy Audits
 
     // 5a. Discrepancy: Frame 233 speed annotation mismatch
-    let frame_233_scen = scenarios.iter().find(|s| s.start_frame == 233).expect("Frame 233 missing");
-    let frame_233_set_effect = frame_233_scen.operations.iter().find_map(|op| {
-        if let RecordedOperation::SetReport { w_value, payload } = op {
-            if *w_value == 0x0302 && payload[1] == SUBCMD_SET_EFFECT {
-                return Some(payload);
+    let frame_233_scen = scenarios
+        .iter()
+        .find(|s| s.start_frame == 233)
+        .expect("Frame 233 missing");
+    let frame_233_set_effect = frame_233_scen
+        .operations
+        .iter()
+        .find_map(|op| {
+            if let RecordedOperation::SetReport { w_value, payload } = op {
+                if *w_value == 0x0302 && payload[1] == SUBCMD_SET_EFFECT {
+                    return Some(payload);
+                }
             }
-        }
-        None
-    }).expect("Frame 233 Set Effect missing");
+            None
+        })
+        .expect("Frame 233 Set Effect missing");
     let period_233 = u16::from_le_bytes([frame_233_set_effect[3], frame_233_set_effect[4]]);
     assert_eq!(
         period_233, 400,
@@ -1046,19 +1134,34 @@ fn test_scenario_coverage_and_discrepancy_audit() {
     // 5b. Discrepancy: Frame 553 unannotated mode transition anomaly
     // In raw capture, Frame 553 is an unannotated burst transmitting StarLight Fast immediately following Music mode.
     // Verify that Frame 387 (Music mode scenario) ends with the StarLight Fast transition packets (Frames 553-560).
-    let music_scen = scenarios.iter().find(|s| s.start_frame == 387).expect("Music scenario missing");
-    let trailing_set_effects: Vec<_> = music_scen.operations.iter().filter_map(|op| {
-        if let RecordedOperation::SetReport { w_value, payload } = op {
-            if *w_value == 0x0302 && payload[1] == SUBCMD_SET_EFFECT {
-                return Some(payload);
+    let music_scen = scenarios
+        .iter()
+        .find(|s| s.start_frame == 387)
+        .expect("Music scenario missing");
+    let trailing_set_effects: Vec<_> = music_scen
+        .operations
+        .iter()
+        .filter_map(|op| {
+            if let RecordedOperation::SetReport { w_value, payload } = op {
+                if *w_value == 0x0302 && payload[1] == SUBCMD_SET_EFFECT {
+                    return Some(payload);
+                }
             }
-        }
-        None
-    }).collect();
-    let last_effect = trailing_set_effects.last().expect("Expected trailing Set Effect in Music scenario");
-    assert_eq!(last_effect[2], EFFECT_STARLIGHT_OR_REACTIVE, "Unlabeled Frame 553 anomaly must be StarLight");
+            None
+        })
+        .collect();
+    let last_effect = trailing_set_effects
+        .last()
+        .expect("Expected trailing Set Effect in Music scenario");
+    assert_eq!(
+        last_effect[2], EFFECT_STARLIGHT_OR_REACTIVE,
+        "Unlabeled Frame 553 anomaly must be StarLight"
+    );
     let last_period = u16::from_le_bytes([last_effect[3], last_effect[4]]);
-    assert_eq!(last_period, 300, "Unlabeled Frame 553 anomaly must be Fast speed (300ms)");
+    assert_eq!(
+        last_period, 300,
+        "Unlabeled Frame 553 anomaly must be Fast speed (300ms)"
+    );
 
     // 6. Diagnostic Logging (visible when tests are run with `-- --show-output` or `--nocapture`)
     let tested_ops: usize = scenarios
@@ -1109,6 +1212,9 @@ fn test_scenario_coverage_and_discrepancy_audit() {
             ExclusionReason::RealtimeAudioStream => "Real-Time Audio Stream (Music)",
             ExclusionReason::AnnotationMismatch => "Known OEM Wire Annotation Mismatch",
         };
-        println!("    - {:<36}: {:>2} scenario(s) ({:>4} ops)", label, scen_count, op_count);
+        println!(
+            "    - {:<36}: {:>2} scenario(s) ({:>4} ops)",
+            label, scen_count, op_count
+        );
     }
 }
