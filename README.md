@@ -195,3 +195,22 @@ The reverse-engineered protocol is documented in [`docs/Protocol.md`](docs/Proto
 ```bash
 cargo test
 ```
+
+#### Protocol Conformance & Regression Suite
+
+The integration test suite in [`tests/pcap_conformance.rs`](tests/pcap_conformance.rs) audits the protocol model and driver implementation against real-world USB packets captured from the official MSI Center software.
+
+1. **State-Machine Invariant Validation** (`test_entire_captured_csv_conforms_to_protocol_state_machine`):
+   - Replays all recorded frames across distinct lighting scenarios through a strict state-machine validator (`ProtocolValidatorTransport`).
+   - Asserts lockstep `SET_REPORT` + `GET_REPORT` pairing, checks appropriate endpoint report lengths (64 bytes for standard effects vs. 65 bytes on report ID `0x0302` for Music mode), enforces mandatory zero-mask pre-clears before Dance mode, and verifies that `02 a0` Flash Apply is executed as a two-phase transaction with proper delay.
+
+2. **Byte-for-Byte Driver Conformance** (`test_driver_calls_match_captured_scenarios_byte_for_byte`):
+   - Invokes high-level `MsiKeyboardDriver` API methods (including session initialization, static colors, breathing, waves in all directions, autonomous and reactive effects, and complex 98-key per-key layouts).
+   - Captures the exact sequence of HID Feature Reports produced by our Rust code and compares them byte-for-byte against physical OEM application wire captures.
+   - Guarantees that effect headers, timing parameters, palettes, and 98-key bitmask sweep sequences match factory software behavior without discrepancies.
+
+3. **Scenario Coverage & Wire Discrepancy Audit** (`test_scenario_coverage_and_discrepancy_audit`):
+   - Verifies that 100% of labeled capture scenarios are partitioned into either canonical driver test cases or an explicit `EXCLUDED_SCENARIOS` table with documented reasons (GUI no-ops, live audio streams, or profile switching).
+   - Audits known wire anomalies
+
+For instructions on updating the capture to test against, see the [USB Packet Capture & Annotation Guide](docs/Capture-Guide.md).
