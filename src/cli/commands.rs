@@ -553,14 +553,20 @@ mod tests {
             speed: CliSpeed::Medium,
             colors: Some(vec![CliColor(Rgb::RED)]), // Fewer than 3 items
         };
-        assert_eq!(cmd.to_string(), "color-cycle (palette=rainbow, speed=medium)");
+        assert_eq!(
+            cmd.to_string(),
+            "color-cycle (palette=rainbow, speed=medium)"
+        );
 
         let cmd = Commands::Wave {
             speed: CliSpeed::Fast,
             direction: CliWaveDirection::LeftToRight,
             colors: Some(vec![CliColor(Rgb::RED), CliColor(Rgb::GREEN)]), // Fewer than 3 items
         };
-        assert_eq!(cmd.to_string(), "wave (palette=rainbow, speed=fast, dir=left-to-right)");
+        assert_eq!(
+            cmd.to_string(),
+            "wave (palette=rainbow, speed=fast, dir=left-to-right)"
+        );
 
         let cmd = Commands::Reactive {
             speed: CliSpeed::Fast,
@@ -572,7 +578,10 @@ mod tests {
             preset: CustomizePreset::EscWhiteRestDance,
             no_clear: true,
         };
-        assert_eq!(cmd.to_string(), "customize (preset=EscWhiteRestDance, no_clear=true)");
+        assert_eq!(
+            cmd.to_string(),
+            "customize (preset=EscWhiteRestDance, no_clear=true)"
+        );
     }
 
     #[test]

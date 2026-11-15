@@ -59,12 +59,30 @@ pub enum ProfileTargetMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PerKeyEffect {
     Steady(Rgb),
-    Breath { fg: Rgb, bg: Rgb, speed: Speed },
-    ColorCycle { palette: CyclePalette, speed: Speed },
-    Wave { palette: CyclePalette, speed: Speed },
-    Dance { speed: Speed },
-    Reactive { color: Rgb, speed: Speed },
-    Ripple { palette: TransientPalette, speed: Speed },
+    Breath {
+        fg: Rgb,
+        bg: Rgb,
+        speed: Speed,
+    },
+    ColorCycle {
+        palette: CyclePalette,
+        speed: Speed,
+    },
+    Wave {
+        palette: CyclePalette,
+        speed: Speed,
+    },
+    Dance {
+        speed: Speed,
+    },
+    Reactive {
+        color: Rgb,
+        speed: Speed,
+    },
+    Ripple {
+        palette: TransientPalette,
+        speed: Speed,
+    },
     Disabled,
 }
 
@@ -947,17 +965,38 @@ fn write_cycle_palette(pkt: &mut [u8; REPORT_LEN], palette: CyclePalette) {
         }
         CyclePalette::ThreeColor(c1, c2, c3) => {
             pkt[11..27].copy_from_slice(&[
-                c1.0, c1.1, c1.2, POS_3COLOR_1,
-                c2.0, c2.1, c2.2, POS_3COLOR_2,
-                c3.0, c3.1, c3.2, POS_3COLOR_3,
-                c1.0, c1.1, c1.2, POS_WRAP_0,
+                c1.0,
+                c1.1,
+                c1.2,
+                POS_3COLOR_1,
+                c2.0,
+                c2.1,
+                c2.2,
+                POS_3COLOR_2,
+                c3.0,
+                c3.1,
+                c3.2,
+                POS_3COLOR_3,
+                c1.0,
+                c1.1,
+                c1.2,
+                POS_WRAP_0,
             ]);
         }
     }
 }
 
 fn write_template_5a_single(pkt: &mut [u8; REPORT_LEN], c: Rgb) {
-    pkt[11..19].copy_from_slice(&[0x00, 0x00, 0x00, POS_50_PERCENT, c.0, c.1, c.2, POS_100_PERCENT]);
+    pkt[11..19].copy_from_slice(&[
+        0x00,
+        0x00,
+        0x00,
+        POS_50_PERCENT,
+        c.0,
+        c.1,
+        c.2,
+        POS_100_PERCENT,
+    ]);
 }
 
 fn write_transient_palette(pkt: &mut [u8; REPORT_LEN], palette: TransientPalette) {
@@ -990,7 +1029,11 @@ mod tests {
             .expect("set_breath should succeed");
 
         let ops = &driver.transport().operations;
-        assert_eq!(ops.len(), 4, "Must execute 2 SET_REPORT + 2 GET_REPORT in lockstep");
+        assert_eq!(
+            ops.len(),
+            4,
+            "Must execute 2 SET_REPORT + 2 GET_REPORT in lockstep"
+        );
 
         // 1. 02 01 Global Key Mask
         let mut expected_mask = [0u8; REPORT_LEN];
@@ -1055,8 +1098,8 @@ mod tests {
         assert_eq!(
             &starlight_pkt[0..19],
             &[
-                0x02, 0x02, 0x05, 0x2c, 0x01, 0x00, 0x32, 0x0a, 0x01, 0x01, 0x00,
-                0x00, 0x00, 0x00, 0x32, 0xff, 0xb9, 0x00, 0x64
+                0x02, 0x02, 0x05, 0x2c, 0x01, 0x00, 0x32, 0x0a, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+                0x32, 0xff, 0xb9, 0x00, 0x64
             ]
         );
 
@@ -1064,8 +1107,8 @@ mod tests {
         assert_eq!(
             &reactive_pkt[0..19],
             &[
-                0x02, 0x02, 0x05, 0x64, 0x00, 0x00, 0x32, 0x50, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x32, 0xff, 0xff, 0xff, 0x64
+                0x02, 0x02, 0x05, 0x64, 0x00, 0x00, 0x32, 0x50, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x32, 0xff, 0xff, 0xff, 0x64
             ]
         );
     }
@@ -1076,7 +1119,11 @@ mod tests {
         driver.set_dance(Speed::Medium).unwrap();
 
         let reports = driver.transport().set_reports();
-        assert_eq!(reports.len(), 4, "Dance mode requires 2 pairs: Clear + Dance");
+        assert_eq!(
+            reports.len(),
+            4,
+            "Dance mode requires 2 pairs: Clear + Dance"
+        );
 
         // First 02 02 is all-zero Off clear (02 02 06 00...)
         let clear_eff = reports[1].1;
@@ -1114,7 +1161,10 @@ mod tests {
                 ) if payload[0] == 0x02 && payload[1] == 0x05 && payload[20] == 0xff
             )
         });
-        assert!(has_music_init_readback, "02 05 must be followed by 65B GET_REPORT(0x0302)");
+        assert!(
+            has_music_init_readback,
+            "02 05 must be followed by 65B GET_REPORT(0x0302)"
+        );
 
         // Verify 02 06 audio frame packet and 65-byte GET_REPORT(0x0302)
         let has_music_frame_readback = ops.windows(2).any(|w| {
@@ -1132,7 +1182,10 @@ mod tests {
                 ) if payload[0] == 0x02 && payload[1] == 0x06
             )
         });
-        assert!(has_music_frame_readback, "02 06 must be followed by 65B GET_REPORT(0x0302)");
+        assert!(
+            has_music_frame_readback,
+            "02 06 must be followed by 65B GET_REPORT(0x0302)"
+        );
     }
 
     #[test]
@@ -1150,7 +1203,11 @@ mod tests {
             .unwrap();
 
         let reports = driver.transport().set_reports();
-        assert_eq!(reports.len(), 98 * 2, "98 keys without initial clear = 196 SET_REPORTs");
+        assert_eq!(
+            reports.len(),
+            98 * 2,
+            "98 keys without initial clear = 196 SET_REPORTs"
+        );
 
         // Key 0 in serialization order is Esc (Packet Byte 7 = 0x02)
         let first_mask = reports[0].1;
@@ -1163,8 +1220,8 @@ mod tests {
         assert_eq!(
             &first_eff[0..19],
             &[
-                0x02, 0x02, 0x01, 0x64, 0x00, 0x32, 0x32, 0x0a, 0x01, 0x00, 0x00,
-                0xff, 0xff, 0xff, 0x64, 0xff, 0xff, 0xff, 0x00
+                0x02, 0x02, 0x01, 0x64, 0x00, 0x32, 0x32, 0x0a, 0x01, 0x00, 0x00, 0xff, 0xff, 0xff,
+                0x64, 0xff, 0xff, 0xff, 0x00
             ]
         );
 
@@ -1220,8 +1277,8 @@ mod tests {
         assert_eq!(
             &ripple_pkt[0..19],
             &[
-                0x02, 0x02, 0x07, 0x2c, 0x01, 0x32, 0x32, 0x0a, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x32, 0xff, 0x00, 0x00, 0x64
+                0x02, 0x02, 0x07, 0x2c, 0x01, 0x32, 0x32, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x32, 0xff, 0x00, 0x00, 0x64
             ]
         );
 
@@ -1234,8 +1291,8 @@ mod tests {
         assert_eq!(
             &reactive_pkt[0..19],
             &[
-                0x02, 0x02, 0x05, 0x2c, 0x01, 0x00, 0x32, 0x50, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x32, 0xff, 0xff, 0xff, 0x64
+                0x02, 0x02, 0x05, 0x2c, 0x01, 0x00, 0x32, 0x50, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x32, 0xff, 0xff, 0xff, 0x64
             ]
         );
     }

@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::thread;
 use std::time::Duration;
 
-use nusb::MaybeFuture;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, TransferError};
+use nusb::MaybeFuture;
 use thiserror::Error;
 
 use super::protocol::{
@@ -35,7 +35,11 @@ pub trait HidControlTransport {
     fn set_idle(&mut self) -> Result<(), TransportError>;
 
     /// Issues a 64-byte USB HID `SET_REPORT` (bRequest = 0x09) to `wValue` (0x0301 or 0x0302).
-    fn set_report(&mut self, w_value: u16, payload: &[u8; REPORT_LEN]) -> Result<(), TransportError>;
+    fn set_report(
+        &mut self,
+        w_value: u16,
+        payload: &[u8; REPORT_LEN],
+    ) -> Result<(), TransportError>;
 
     /// Issues a USB HID `GET_REPORT` (bRequest = 0x01) from `wValue` (0x0301 or 0x0302)
     /// with the specified `length` (64 bytes for standard commands, 65 bytes for Music mode).
@@ -95,7 +99,11 @@ impl HidControlTransport for NusbTransport {
         Ok(())
     }
 
-    fn set_report(&mut self, w_value: u16, payload: &[u8; REPORT_LEN]) -> Result<(), TransportError> {
+    fn set_report(
+        &mut self,
+        w_value: u16,
+        payload: &[u8; REPORT_LEN],
+    ) -> Result<(), TransportError> {
         self.interface
             .control_out(
                 ControlOut {
@@ -194,7 +202,11 @@ impl HidControlTransport for MockTransport {
         Ok(())
     }
 
-    fn set_report(&mut self, w_value: u16, payload: &[u8; REPORT_LEN]) -> Result<(), TransportError> {
+    fn set_report(
+        &mut self,
+        w_value: u16,
+        payload: &[u8; REPORT_LEN],
+    ) -> Result<(), TransportError> {
         if let Some(err) = self.fail_next_transfer.take() {
             return Err(TransportError::Mock(err));
         }
