@@ -1,5 +1,5 @@
-pub mod core;
+pub mod hid;
 
-pub use core::driver;
-pub use core::protocol;
-pub use core::transport;
+pub use hid::driver;
+pub use hid::protocol;
+pub use hid::transport;
