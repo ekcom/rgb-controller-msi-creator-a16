@@ -190,6 +190,13 @@ cargo doc
 
 The reverse-engineered protocol is documented in [`docs/Protocol.md`](docs/Protocol.md).
 
+### Lint
+
+```
+cargo fmt
+cargo clippy
+```
+
 ### Tests
 
 ```bash
