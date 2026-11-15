@@ -4,17 +4,18 @@ A userspace USB HID controller for the **MSI Creator A16 AI+** laptop's per-key 
 
 Contains a library and a CLI driver.
 
-## Requirements
+## Installation
 
 ### Supported Devices
 
 - MSI Creator A16 AI+
     - Verified on BIOS release `E15FKAMS.321` (09/17/2026)
-    - Other MSI `MS_1565` keyboards may share this controller but are not guaranteed to work
+    - Other MSI `MS_1565` keyboards may share this controller but are not guaranteed
+    - (USB VID `0x1462`, PID `0x1565`, Interface 0)
 
 ### Dependencies
 
-- cargo
+- rust
 
 ### Configure udev Rule
 
@@ -31,3 +32,9 @@ To apply without rebooting:
 ```bash
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
+
+## Development
+
+### Protocol
+
+The reverse-engineered protocol has been documented in [`docs/Protocol.md`](docs/Protocol.md).
